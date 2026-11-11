@@ -2,9 +2,9 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from src.utils.config import load_indicators_config
+from utils.config import load_indicators_config
 
-CONFIG = load_indicators_config
+CONFIG = load_indicators_config()
 
 class FootballDataClient:
 
@@ -34,24 +34,49 @@ class FootballDataClient:
             adapter = adapter
         )
 
-    def get_matches(self, season: int) -> dict:
+    def _get(self, endpoint: str, params: dict | None = None):
 
         response = self.session.get(
-            f"{self.BASE_URL}/competitions/PD/matches",
-            params={"season": season},
-            timeout=30
+            f"{self.BASE_URL}/{endpoint}",
+            params = params,
+            timeout = 30
         )
 
         response.raise_for_status()
 
-        data = response.json()
-
-        if not isinstance(data, dict) or not isinstance(
-            data.get("matches"), list
-        ):
-            raise ValueError("Formato de respuesta inesperado")
-
+        return response.json()
+    
+    
+    def get_matches(self, season: int) -> dict:
+        data = self._get(
+            "competitions/PD/matches",
+            {"season": season}
+        )
+        if not isinstance(data.get("matches"), list):
+            raise ValueError("Respuesta inválida de partidos")
         return data
+
+    def get_teams(self, season: int) -> dict:
+        data = self._get(
+            "competitions/PD/teams",
+            {"season": season}
+        )
+        if not isinstance(data.get("teams"), list):
+            raise ValueError("Respuesta inválida de equipos")
+        return data
+
+    def get_competition(self) -> dict:
+        return self._get("competitions/PD")
+
+    def get_standings(self, season: int) -> dict:
+        data = self._get(
+            "competitions/PD/standings",
+            {"season": season}
+        )
+        if not isinstance(data.get("standings"), list):
+            raise ValueError("Respuesta inválida de clasificación")
+        return data
+
 
     def close(self):
         self.session.close()
