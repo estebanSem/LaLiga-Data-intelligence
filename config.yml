@@ -1,3 +1,23 @@
 API:
   base_url: "https://api.football-data.org/v4"
+
+
+
+api:
+  base_url: https://api.football-data.org/v4
+  timeout: 30
+
+storage:
+  raw_path: data/raw
+
+datasets:
+  matches:
+    endpoint: /competitions/PD/matches
+  teams:
+    endpoint: /competitions/PD/teams
+  standings:
+    endpoint: /competitions/PD/standings
+  competition:
+    endpoint: /competitions/PD
+    
   

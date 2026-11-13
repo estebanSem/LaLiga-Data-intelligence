@@ -1,6 +1,11 @@
-import requests 
-from requests.adapters import HTTPAdapter
+import requests
+import json
+
+from requests.adapters  import HTTPAdapter
 from urllib3.util.retry import Retry
+
+from pathlib    import Path
+from datetime   import datetime, timezone
 
 from utils.config import load_indicators_config
 
@@ -44,39 +49,32 @@ class FootballDataClient:
 
         response.raise_for_status()
 
+        print("- Datos obtenidos correctamente")
+
         return response.json()
+
+    def _save_data(self, data, season: str, raw_path: str, option: str):
+
+        timestamp = datetime.now(timezone.utc).strftime(
+            "%Y%m%dT%H%M%S%fZ"
+        )
+        
+        output_dir = Path(f"{raw_path}/{season}/{option}")
+        output_dir.mkdir(
+            parents = True,
+            exist_ok = True
+        )
     
+        output_path = output_dir / (
+            f"laliga_matches_{timestamp}.json"
+        )
     
-    def get_matches(self, season: int) -> dict:
-        data = self._get(
-            "competitions/PD/matches",
-            {"season": season}
-        )
-        if not isinstance(data.get("matches"), list):
-            raise ValueError("Respuesta inválida de partidos")
-        return data
-
-    def get_teams(self, season: int) -> dict:
-        data = self._get(
-            "competitions/PD/teams",
-            {"season": season}
-        )
-        if not isinstance(data.get("teams"), list):
-            raise ValueError("Respuesta inválida de equipos")
-        return data
-
-    def get_competition(self) -> dict:
-        return self._get("competitions/PD")
-
-    def get_standings(self, season: int) -> dict:
-        data = self._get(
-            "competitions/PD/standings",
-            {"season": season}
-        )
-        if not isinstance(data.get("standings"), list):
-            raise ValueError("Respuesta inválida de clasificación")
-        return data
-
-
+        with output_path.open("x", encoding="utf-8") as file:
+            json.dump(data, file, ensure_ascii=False, indent=2)
+    
+        print(f"- Archivo guardado: {output_path}")
+    
+        return output_path
+    
     def close(self):
         self.session.close()
